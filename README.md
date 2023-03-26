@@ -1,28 +1,35 @@
 <h1>APTP 2023 - {TeamName}</h1>
 <h6>Asterisk Programming Team Project 2023</h6>
-<h4>Team Members: 1 | 2 | 3 | 4 | 5 </h4>
+<h4>Team Members: 윤도영 | 고은희 | 김유찬 | 이원종 | TA이정현 | TA장예원 </h4>
 
 <h2>1. 주제 </h2>
 오목 AI
 
 <h2>2. 동기 </h2>
-
+시중에 이미 나와있는 오목 AI가 많은데 어떤 차이들이 있는지 알아보고
+이를 구현하려면 어떤 알고리즘을 적용해야 할지 학습해보고자 함.
 
 <h2>3. 프로그램 사용 대상</h2>
-everyone
+오목을 즐기고자 하는 사람 누구나
 
 <h2>4. 목적</h2>
-오목 게임
+오목 AI에는 매우 많은 알고리즘이 필요하므로 개발 시 다양한 알고리즘을 한 번에 배울 수 있다.
+플레이어는 친구와 함께 번갈아서 둘 수도 있고 AI와 플레이하며 오목을 배우고 실력을 키울 수 있다. 
 
 <h2>5. 주요 기능</h2>
 <ol>
-<li>Image Classifier - Predict</li>
-<li>Image Classifier - Trainer</li>
+<li>렌주룰 적용</li>
+<li>2인 모드</li>
+<li>1인 AI 모드</li>
 </ol>
 <h2>6. 프로젝트 핵심</h2>
 <ul>
-<li>Understanding of CNN</li>
+<li>적대적 탐색</li>
+<li>최소-최대 탐색</li>
+<li>적대적 탐색</li>
 </ul>
 <h2>7. 구현에 필요한 라이브러리나 기술</h2>
+pygame, numpy 등등...
+Tic-Tac-Toe 게임의 응용
 
 <h2>8. 분업 계획</h2>
