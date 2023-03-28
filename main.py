@@ -1,4 +1,4 @@
-# Yoon's Omok
+# 은희 test
 
 import pygame
 
