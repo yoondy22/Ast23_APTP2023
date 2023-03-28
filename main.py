@@ -1,4 +1,4 @@
-# Omok
+# Yoon's Omok
 
 import pygame
 
