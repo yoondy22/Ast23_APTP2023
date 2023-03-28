@@ -1,4 +1,4 @@
-<h1>APTP 2023 - {TeamName}</h1>
+<h1>APTP 2023 - {Yoon's  Alpha-Omok}</h1>
 <h6>Asterisk Programming Team Project 2023</h6>
 <h4>Team Members: 윤도영 | 고은희 | 김유찬 | 이원종 | TA이정현 | TA장예원 </h4>
 
