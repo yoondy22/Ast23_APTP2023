@@ -1,3 +1,5 @@
+# Omok
+
 import pygame
 
 pygame.init()
