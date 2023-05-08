@@ -124,7 +124,57 @@ def put_white(x, y):
         game_end = True
 
 
+def start_screen():
+    global done
+
+    go_together = 0
+
+    screen.fill(WHITE)
+
+    title_font = pygame.font.SysFont("arial", 50, True, True)  # 제목 폰트
+    title = title_font.render("OMOK GAME HAGI", True, BLACK)
+    title_rect = title.get_rect()
+    title_rect.center = (340,100)  # 제목 위치
+    screen.blit(title, title_rect)
+
+    menu_font=pygame.font.SysFont("arial", 35, True, True)  # play sole, together, exit 폰트
+
+    pygame.draw.rect(screen, BLACK, [250, 300, 150, 50], 2)  # play sole
+    play_sole = menu_font.render("play sole", True, BLACK)
+    sole_rect = play_sole.get_rect()
+    sole_rect.center = (320,320)
+    screen.blit(play_sole, sole_rect)
+
+    pygame.draw.rect(screen, BLACK, [225, 400, 200, 50], 2)  # play together
+    play_together = menu_font.render("play together", True, BLACK)
+    together_rect = play_together.get_rect()
+    together_rect.center = (323, 420)
+    screen.blit(play_together, together_rect)
+
+    pygame.draw.rect(screen, BLACK, [250, 500, 150, 50], 2)  # EXIT
+    Nagagi = menu_font.render("EXIT", True, BLACK)
+    Nagagi_rect = Nagagi.get_rect()
+    Nagagi_rect.center = (320, 525)
+    screen.blit(Nagagi, Nagagi_rect)
+
+    while not done:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+                if 225 <= mouse_pos[0] <= 425 and 400 <= mouse_pos[1] <= 450:  # play together 눌렀을 때
+                    go_together = 1
+                if 250 <= mouse_pos[0] <= 400 and 500 <= mouse_pos[1] <= 550:  # EXIT 눌렀을 때
+                    done = True
+        if go_together:  # 다음 화면으로 넘어가기
+            break
+        pygame.display.flip()
+
+
 if __name__ == "__main__":
+    start_screen()
+
     screen.fill(WHITE)  # Background color
     pygame.time.Clock().tick(10)  # FPS
 
