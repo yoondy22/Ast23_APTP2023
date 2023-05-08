@@ -1,6 +1,5 @@
-# 은희 test
-
 import pygame
+
 
 pygame.init()
 BLACK = (0, 0, 0)
@@ -21,24 +20,69 @@ order = 0  # 현재까지 놓인 돌의 개수
 game_end = False
 
 
-def check_omok():
-    # 가로 체크
-    for i in range(15):
-        for j in range(10):
-            if stone_board[i][j] and stone_board[i][j] == stone_board[i][j+1] == stone_board[i][j+2] == \
-                    stone_board[i][j+3] == stone_board[i][j+4]:
-                return stone_board[i][j]
+def check_omok(x, y):
+    target_stone = stone_board[y][x]
 
-    # 세로 체크
-    for i in range(15):
-        for j in range(10):
-            if stone_board[j][i] and stone_board[j][i] == stone_board[j+1][i] == stone_board[j+2][i] == \
-                    stone_board[j+3][i] == stone_board[j+4][i]:
-                return stone_board[j][i]
+    horizontal = 0
+    vertical = 0
+    upward_diagonal = 0
+    downward_diagonal = 0
 
-    # / 대각선 체크
+    ## 가로 탐색
+    # 가로 좌방 탐색
+    for i in range(1, 5):
+        if x - i < 0 or stone_board[y][x - i] != target_stone:
+            break
+        horizontal += 1
+    # 가로 우방 탐색
+    for i in range(1, 5):
+        if x + i > 14 or stone_board[y][x + i] != target_stone:
+            break
+        horizontal += 1
+    if horizontal >= 4:
+        return target_stone
 
-    # \ 대각선 체크
+    ## 세로 탐색
+    # 세로 상방 탐색
+    for i in range(1, 5):
+        if y - i < 0 or stone_board[y - i][x] != target_stone:
+            break
+        vertical += 1
+    # 세로 하방 탐색
+    for i in range(1, 5):
+        if y + i > 14 or stone_board[y + i][x] != target_stone:
+            break
+        vertical += 1
+    if vertical >= 4:
+        return target_stone
+
+    ## 우상향 대각선 탐색
+    # 좌하방 탐색
+    for i in range(1, 5):
+        if x - i < 0 or y + i > 14 or stone_board[y + i][x - i] != target_stone:
+            break
+        upward_diagonal += 1
+    # 우상방 탐색
+    for i in range(1, 5):
+        if x + i > 14 or y - i < 0 or stone_board[y - i][x + i] != target_stone:
+            break
+        upward_diagonal += 1
+    if upward_diagonal >= 4:
+        return target_stone
+
+    ## 우하향 대각선 탐색
+    # 좌상방 탐색
+    for i in range(1, 5):
+        if x - i < 0 or y - i < 0 or stone_board[y - i][x - i] != target_stone:
+            break
+        downward_diagonal += 1
+    # 우하방 탐색
+    for i in range(1, 5):
+        if x + i > 14 or y + i > 14 or stone_board[y + i][x + i] != target_stone:
+            break
+        downward_diagonal += 1
+    if downward_diagonal >= 4:
+        return target_stone
 
     return 0
 
@@ -54,7 +98,7 @@ def put_black(x, y):  # 검은돌 착수
     stone_board[y][x] = 1
     order += 1
 
-    if check_omok() == 1:
+    if check_omok(x, y) == 1:
         font = pygame.font.SysFont("arial", 50, True, False)
         winning_text = font.render("BLACK WIN!", True, RED)
         screen.blit(winning_text, (190, 310))
@@ -73,7 +117,7 @@ def put_white(x, y):
     stone_board[y][x] = 2
     order += 1
 
-    if check_omok() == 2:
+    if check_omok(x, y) == 2:
         font = pygame.font.SysFont("arial", 50, True, False)
         winning_text = font.render("WHITE WIN!", True, RED)
         screen.blit(winning_text, (200, 310))
@@ -81,7 +125,6 @@ def put_white(x, y):
 
 
 if __name__ == "__main__":
-
     screen.fill(WHITE)  # Background color
     pygame.time.Clock().tick(10)  # FPS
 
