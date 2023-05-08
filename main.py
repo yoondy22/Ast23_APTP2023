@@ -9,7 +9,7 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-size = [680, 680]  # 게임창 크기 [w, h]
+size = [680 + 200, 680]  # 게임창 크기 [w, h]
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Yoon's Omok")  # 게임창 이름
 
@@ -19,6 +19,7 @@ board_stack = [copy.deepcopy(stone_board)]
 grid_size = 40  # 격자 한 칸의 가로세로 픽셀
 stone_size = 17  # 돌의 반지름
 order = 0  # 현재까지 놓인 돌의 개수
+full_order = 0
 winner = 0  # 1=흑, 2=백
 game_end = False
 
@@ -92,24 +93,62 @@ def check_omok(x, y):
 
 def put_black(x, y):  # 검은돌 착수
     global order
+    global full_order
+
+    stone_board = copy.deepcopy(board_stack[order])
 
     if stone_board[y][x]:  # 돌이 이미 존재하면
         return  # 착수 불가
 
     stone_board[y][x] = 1
+
+    for i in range(full_order - order):
+        board_stack.pop()
+
     order += 1
+    full_order = order
     board_stack.append(copy.deepcopy(stone_board))
 
 
 def put_white(x, y):
     global order
+    global full_order
+
+    stone_board = copy.deepcopy(board_stack[order])
 
     if stone_board[y][x]:
         return
 
     stone_board[y][x] = 2
+
+    for i in range(full_order - order):
+        board_stack.pop()
+
     order += 1
+    full_order = order
     board_stack.append(copy.deepcopy(stone_board))
+
+
+def undo():
+    global order
+    if order > 0:
+        order -= 1
+
+
+def redo():
+    global order
+    if order < full_order:
+        order += 1
+
+
+def undo_all():
+    global order
+    order = 0
+
+
+def redo_all():
+    global order
+    order = full_order
 
 
 def draw_board():
@@ -118,7 +157,8 @@ def draw_board():
     screen.fill(WHITE)  # Background color
     pygame.time.Clock().tick(60)  # FPS
 
-    pygame.draw.rect(screen, (247, 201, 122), [20, 20, 640, 640], 0)  # 오목판
+    pygame.draw.rect(screen, (247, 201, 122), [20, 20, 640, 640], 0)  # 좌측 오목판
+    pygame.draw.rect(screen, (221, 221, 221), [680, 0, 200, 680], 0)  # 우측 메뉴판
 
     # 격자
     for i in range(14):
@@ -129,11 +169,37 @@ def draw_board():
 
     for i in range(15):
         for j in range(15):
-            if stone_board[j][i] == 1:
+            if board_stack[order][j][i] == 1:
                 pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * i, grid_origin_y + grid_size * j], stone_size, 0)
-            if stone_board[j][i] == 2:
+            if board_stack[order][j][i] == 2:
                 pygame.draw.circle(screen, WHITE, [grid_origin_x + grid_size * i, grid_origin_y + grid_size * j], stone_size, 0)
                 pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * i, grid_origin_y + grid_size * j], stone_size, 1)
+
+    pygame.draw.rect(screen, (190, 255, 190), [700, 410, 70, 70], 0)
+    font = pygame.font.SysFont("arial", 15, True, False)
+    undo_text = font.render("Undo", True, BLACK)
+    screen.blit(undo_text, (710, 440))
+
+    pygame.draw.rect(screen, (190, 255, 190), [790, 410, 70, 70], 0)
+    font = pygame.font.SysFont("arial", 15, True, False)
+    redo_text = font.render("Redo", True, BLACK)
+    screen.blit(redo_text, (800, 440))
+
+    pygame.draw.rect(screen, (190, 255, 190), [700, 500, 70, 70], 0)
+    font = pygame.font.SysFont("arial", 15, True, False)
+    undo_all_text = font.render("Undo All", True, BLACK)
+    screen.blit(undo_all_text, (700, 530))
+
+    pygame.draw.rect(screen, (190, 255, 190), [790, 500, 70, 70], 0)
+    font = pygame.font.SysFont("arial", 15, True, False)
+    redo_all_text = font.render("Redo All", True, BLACK)
+    screen.blit(redo_all_text, (790, 530))
+
+    pygame.draw.rect(screen, WHITE, [700, 590, 160, 70], 0)
+    pygame.draw.rect(screen, BLACK, [700, 590, 160, 70], 3)
+    font = pygame.font.SysFont("arial", 30, True, False)
+    quit_text = font.render("Q U I T", True, BLACK)
+    screen.blit(quit_text, (731, 608))
 
     if winner == 1:
         font = pygame.font.SysFont("arial", 50, True, False)
@@ -154,8 +220,10 @@ if __name__ == "__main__":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # 닫기 버튼 누르면 게임창 종료
                 done = True
+
             elif not game_end and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # 마우스 클릭 & 좌클릭
                 mouse_pos = pygame.mouse.get_pos()
+
                 if 40 <= mouse_pos[0] <= 639 and 40 <= mouse_pos[1] <= 639:
                     x, y = (mouse_pos[0]-40)//40, (mouse_pos[1]-40)//40
                     if order % 2:
@@ -163,6 +231,21 @@ if __name__ == "__main__":
                     else:
                         put_black(x, y)
                     winner = check_omok(x, y)
+
+                elif 700 <= mouse_pos[0] <= 769 and 410 <= mouse_pos[1] <= 479:
+                    undo()
+
+                elif 790 <= mouse_pos[0] <= 859 and 410 <= mouse_pos[1] <= 479:
+                    redo()
+
+                elif 700 <= mouse_pos[0] <= 769 and 500 <= mouse_pos[1] <= 569:
+                    undo_all()
+
+                elif 790 <= mouse_pos[0] <= 859 and 500 <= mouse_pos[1] <= 569:
+                    redo_all()
+
+                elif 700 <= mouse_pos[0] <= 859 and 590 <= mouse_pos[1] <= 659:
+                    done = True
 
         pygame.display.flip()
 
