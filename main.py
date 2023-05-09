@@ -22,12 +22,12 @@ order = 0  # 현재까지 놓인 돌의 개수
 full_order = 0
 winner = 0  # 1=흑, 2=백
 game_end = False
-
-grid_origin_x = 60
-grid_origin_y = 60
+x, y = -1, -1
+grid_origin_x, grid_origin_y = 60, 60
 
 
 def check_omok(x, y):
+    stone_board = copy.copy(board_stack[order])
     target_stone = stone_board[y][x]
 
     horizontal, vertical, upward_diagonal, downward_diagonal = 0, 0, 0, 0
@@ -131,8 +131,12 @@ def put_white(x, y):
 
 def undo():
     global order
+    global winner
+    global game_end
     if order > 0:
         order -= 1
+    winner = 0
+    game_end = 0
 
 
 def redo():
@@ -143,7 +147,11 @@ def redo():
 
 def undo_all():
     global order
+    global winner
+    global game_end
     order = 0
+    winner = 0
+    game_end = 0
 
 
 def redo_all():
@@ -175,31 +183,40 @@ def draw_board():
                 pygame.draw.circle(screen, WHITE, [grid_origin_x + grid_size * i, grid_origin_y + grid_size * j], stone_size, 0)
                 pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * i, grid_origin_y + grid_size * j], stone_size, 1)
 
+    sequence_control_font = pygame.font.SysFont("arial", 15, True, False)
+
     pygame.draw.rect(screen, (190, 255, 190), [700, 410, 70, 70], 0)
-    font = pygame.font.SysFont("arial", 15, True, False)
-    undo_text = font.render("Undo", True, BLACK)
-    screen.blit(undo_text, (710, 440))
+    undo_text = sequence_control_font.render("Undo", True, BLACK)
+    undo_text_rect = undo_text.get_rect()
+    undo_text_rect.center = (735, 445)
+    screen.blit(undo_text, undo_text_rect)
 
     pygame.draw.rect(screen, (190, 255, 190), [790, 410, 70, 70], 0)
-    font = pygame.font.SysFont("arial", 15, True, False)
-    redo_text = font.render("Redo", True, BLACK)
-    screen.blit(redo_text, (800, 440))
+    undo_text = sequence_control_font.render("Redo", True, BLACK)
+    undo_text_rect = undo_text.get_rect()
+    undo_text_rect.center = (825, 445)
+    screen.blit(undo_text, undo_text_rect)
 
     pygame.draw.rect(screen, (190, 255, 190), [700, 500, 70, 70], 0)
-    font = pygame.font.SysFont("arial", 15, True, False)
-    undo_all_text = font.render("Undo All", True, BLACK)
-    screen.blit(undo_all_text, (700, 530))
+    undo_text = sequence_control_font.render("Undo All", True, BLACK)
+    undo_text_rect = undo_text.get_rect()
+    undo_text_rect.center = (735, 535)
+    screen.blit(undo_text, undo_text_rect)
 
     pygame.draw.rect(screen, (190, 255, 190), [790, 500, 70, 70], 0)
-    font = pygame.font.SysFont("arial", 15, True, False)
-    redo_all_text = font.render("Redo All", True, BLACK)
-    screen.blit(redo_all_text, (790, 530))
+    undo_text = sequence_control_font.render("Redo All", True, BLACK)
+    undo_text_rect = undo_text.get_rect()
+    undo_text_rect.center = (825, 535)
+    screen.blit(undo_text, undo_text_rect)
+
+    quit_font = pygame.font.SysFont("arial", 30, True, False)
 
     pygame.draw.rect(screen, WHITE, [700, 590, 160, 70], 0)
     pygame.draw.rect(screen, BLACK, [700, 590, 160, 70], 3)
-    font = pygame.font.SysFont("arial", 30, True, False)
-    quit_text = font.render("Q U I T", True, BLACK)
-    screen.blit(quit_text, (731, 608))
+    undo_text = quit_font.render("Q U I T", True, BLACK)
+    undo_text_rect = undo_text.get_rect()
+    undo_text_rect.center = (780, 625)
+    screen.blit(undo_text, undo_text_rect)
 
     if winner == 1:
         font = pygame.font.SysFont("arial", 50, True, False)
@@ -221,11 +238,11 @@ if __name__ == "__main__":
             if event.type == pygame.QUIT:  # 닫기 버튼 누르면 게임창 종료
                 done = True
 
-            elif not game_end and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # 마우스 클릭 & 좌클릭
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # 마우스 클릭 & 좌클릭
                 mouse_pos = pygame.mouse.get_pos()
 
-                if 40 <= mouse_pos[0] <= 639 and 40 <= mouse_pos[1] <= 639:
-                    x, y = (mouse_pos[0]-40)//40, (mouse_pos[1]-40)//40
+                if not game_end and 40 <= mouse_pos[0] <= 639 and 40 <= mouse_pos[1] <= 639:
+                    x, y = (mouse_pos[0] - 40) // 40, (mouse_pos[1] - 40) // 40
                     if order % 2:
                         put_white(x, y)
                     else:
@@ -237,12 +254,14 @@ if __name__ == "__main__":
 
                 elif 790 <= mouse_pos[0] <= 859 and 410 <= mouse_pos[1] <= 479:
                     redo()
+                    winner = check_omok(x, y)
 
                 elif 700 <= mouse_pos[0] <= 769 and 500 <= mouse_pos[1] <= 569:
                     undo_all()
 
                 elif 790 <= mouse_pos[0] <= 859 and 500 <= mouse_pos[1] <= 569:
                     redo_all()
+                    winner = check_omok(x, y)
 
                 elif 700 <= mouse_pos[0] <= 859 and 590 <= mouse_pos[1] <= 659:
                     done = True
