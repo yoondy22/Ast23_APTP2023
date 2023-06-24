@@ -30,9 +30,9 @@ def start_screen():
 
     screen.fill((255, 242, 214))
 
-    title_font = pygame.font.SysFont("ungungseo", 50, True, True)  # 제목 폰트
+    title_font = pygame.font.SysFont("arial", 50, True, True)  # 제목 폰트
 
-    title_text = title_font.render("오목", True, BLACK)
+    title_text = title_font.render("GO", True, BLACK)
     title_text_rect = title_text.get_rect()
     title_text_rect.center = (440, 100)  # 제목 위치
     screen.blit(title_text, title_text_rect)
@@ -106,21 +106,21 @@ def player2_mode():
                         put_white(x, y)
                     else:
                         put_black(x, y)
-                    winner = check_omok(x, y)
+                    winner = is_five(x, y)
 
                 elif 700 <= mouse_pos[0] <= 769 and 410 <= mouse_pos[1] <= 479:
                     undo()
 
                 elif 790 <= mouse_pos[0] <= 859 and 410 <= mouse_pos[1] <= 479:
                     redo()
-                    winner = check_omok(x, y)
+                    winner = is_five(x, y)
 
                 elif 700 <= mouse_pos[0] <= 769 and 500 <= mouse_pos[1] <= 569:
                     undo_all()
 
                 elif 790 <= mouse_pos[0] <= 859 and 500 <= mouse_pos[1] <= 569:
                     redo_all()
-                    winner = check_omok(x, y)
+                    winner = is_five(x, y)
 
                 elif 700 <= mouse_pos[0] <= 859 and 590 <= mouse_pos[1] <= 659:
                     for i in range(full_order):
@@ -151,6 +151,13 @@ def draw_board():
             pygame.draw.rect(screen, BLACK,
                              [grid_origin_x + grid_size * i, grid_origin_y + grid_size * j, grid_size, grid_size], 1)
     pygame.draw.rect(screen, BLACK, [59, 59, 562, 562], 1)
+
+    dot_size = 5
+    pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * 3, grid_origin_y + grid_size * 3], dot_size, 0)
+    pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * 3, grid_origin_y + grid_size * 11], dot_size, 0)
+    pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * 7, grid_origin_y + grid_size * 7], dot_size, 0)
+    pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * 11, grid_origin_y + grid_size * 3], dot_size, 0)
+    pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * 11, grid_origin_y + grid_size * 11], dot_size, 0)
 
     for i in range(15):
         for j in range(15):
@@ -195,16 +202,15 @@ def draw_board():
     home_text_rect.center = (780, 625)
     screen.blit(home_text, home_text_rect)
 
-    if winner == 1:
+    if winner:
         font = pygame.font.SysFont("arial", 50, True, False)
-        winning_text = font.render("BLACK WIN!", True, RED)
-        screen.blit(winning_text, (190, 310))
-        game_end = True
-
-    if winner == 2:
-        font = pygame.font.SysFont("arial", 50, True, False)
-        winning_text = font.render("WHITE WIN!", True, RED)
-        screen.blit(winning_text, (200, 310))
+        if winner == 1:
+            winning_text = font.render("BLACK WIN!", True, RED)
+        else:
+            winning_text = font.render("WHITE WIN!", True, RED)
+        winning_text_rect = winning_text.get_rect()
+        winning_text_rect.center = (340, 340)
+        screen.blit(winning_text, winning_text_rect)
         game_end = True
 
 
@@ -254,67 +260,26 @@ def put_white(x, y):
     board_stack.append(copy.deepcopy(stone_board))
 
 
-def check_omok(x, y):
-    stone_board = copy.copy(board_stack[order])
-    target_stone = stone_board[y][x]
+def is_five(x, y):
+    for i in range(4):  # 4방향 탐색
+        stone_cnt = 1
 
-    horizontal, vertical, upward_diagonal, downward_diagonal = 0, 0, 0, 0
+        for j in range(-1, 2, 2):  # 방향별 양쪽 탐색
+            cur_x, cur_y = x, y
 
-    ## 가로 탐색
-    # 좌방 탐색
-    for i in range(1, 5):
-        if x - i < 0 or stone_board[y][x - i] != target_stone:
-            break
-        horizontal += 1
-    # 우방 탐색
-    for i in range(1, 5):
-        if x + i > 14 or stone_board[y][x + i] != target_stone:
-            break
-        horizontal += 1
-    if horizontal >= 4:
-        return target_stone
+            for k in range(4):  # 최대 4칸 이동
+                cur_x += [-1, -1, 0, 1][i] * j
+                cur_y += [0, -1, -1, -1][i] * j
 
-    ## 세로 탐색
-    # 상방 탐색
-    for i in range(1, 5):
-        if y - i < 0 or stone_board[y - i][x] != target_stone:
-            break
-        vertical += 1
-    # 하방 탐색
-    for i in range(1, 5):
-        if y + i > 14 or stone_board[y + i][x] != target_stone:
-            break
-        vertical += 1
-    if vertical >= 4:
-        return target_stone
+                if cur_x < 0 or cur_x > 14 or cur_y < 0 or cur_y > 14:
+                    break
+                if board_stack[order][cur_y][cur_x] != board_stack[order][y][x]:
+                    break
 
-    ## 우상향 대각선 탐색
-    # 좌하방 탐색
-    for i in range(1, 5):
-        if x - i < 0 or y + i > 14 or stone_board[y + i][x - i] != target_stone:
-            break
-        upward_diagonal += 1
-    # 우상방 탐색
-    for i in range(1, 5):
-        if x + i > 14 or y - i < 0 or stone_board[y - i][x + i] != target_stone:
-            break
-        upward_diagonal += 1
-    if upward_diagonal >= 4:
-        return target_stone
+                stone_cnt += 1
 
-    ## 우하향 대각선 탐색
-    # 좌상방 탐색
-    for i in range(1, 5):
-        if x - i < 0 or y - i < 0 or stone_board[y - i][x - i] != target_stone:
-            break
-        downward_diagonal += 1
-    # 우하방 탐색
-    for i in range(1, 5):
-        if x + i > 14 or y + i > 14 or stone_board[y + i][x + i] != target_stone:
-            break
-        downward_diagonal += 1
-    if downward_diagonal >= 4:
-        return target_stone
+        if stone_cnt >= 5:
+            return board_stack[order][y][x]
 
     return 0
 
