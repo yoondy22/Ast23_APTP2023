@@ -29,13 +29,10 @@ def start_screen():
     done = False
 
     screen.fill((255, 242, 214))
-    # background_img = pygame.image.load("background2.png")
-    # background_img = pygame.transform.scale(background_img, (880, 680))
-    # screen.blit(background_img, (0, 0))
 
-    title_font = pygame.font.SysFont("arial", 50, True, True)  # 제목 폰트
+    title_font = pygame.font.SysFont("ungungseo", 50, True, True)  # 제목 폰트
 
-    title_text = title_font.render("OMOK GAME HAGI", True, BLACK)
+    title_text = title_font.render("오목", True, BLACK)
     title_text_rect = title_text.get_rect()
     title_text_rect.center = (440, 100)  # 제목 위치
     screen.blit(title_text, title_text_rect)
@@ -89,6 +86,7 @@ def start_screen():
 def player2_mode():
     global order, full_order
     global winner
+    global game_end
     global x, y
 
     done = False
@@ -128,6 +126,8 @@ def player2_mode():
                     for i in range(full_order):
                         board_stack.pop()
                     order, full_order = 0, 0
+                    winner = 0
+                    game_end = False
                     start_screen()
 
         pygame.display.flip()
@@ -142,9 +142,6 @@ def draw_board():
     screen.fill(WHITE)  # Background color
     pygame.time.Clock().tick(60)  # FPS
 
-    # background_img = pygame.image.load("background.webp")
-    # background_img = pygame.transform.scale(background_img, (880, 680))
-    # screen.blit(background_img, (0, 0))
     pygame.draw.rect(screen, (247, 201, 122), [20, 20, 640, 640], 0)  # 좌측 오목판
     pygame.draw.rect(screen, (221, 221, 221), [680, 0, 200, 680], 0)  # 우측 메뉴판
 
