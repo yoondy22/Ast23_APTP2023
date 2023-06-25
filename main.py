@@ -13,7 +13,7 @@ stone_size = 17  # 돌의 반지름
 grid_origin_x, grid_origin_y = 60, 60
 
 
-board_stack = [[[0 for j in range(15)] for i in range(15)]]  # 오목판 15*15 배열, 0=무돌, 1=흑돌, 2=백돌
+board_stack = [[[0 for j in range(15)] for i in range(15)]]  # 오목판 15*15 배열, 0=무돌, 1=흑돌, 2=백돌, -1=금수
 full_order = 0  # 최대로 놓인 돌의 개수
 order = 0  # 현재까지 놓인 돌의 개수
 winner = 0  # 1=흑, 2=백
@@ -72,8 +72,16 @@ def start_screen():
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # 마우스 클릭 & 좌클릭
                 mouse_pos = pygame.mouse.get_pos()
 
+                if 310 <= mouse_pos[0] <= 569 and 200 <= mouse_pos[1] <= 269:  # 1player black
+                    game_start(1)
+                    return
+
+                if 310 <= mouse_pos[0] <= 569 and 300 <= mouse_pos[1] <= 369:  # 1player white
+                    game_start(2)
+                    return
+
                 if 310 <= mouse_pos[0] <= 569 and 400 <= mouse_pos[1] <= 469:  # 2 player
-                    player2_mode()
+                    game_start(0)
                     return
 
                 if 360 <= mouse_pos[0] <= 519 and 550 <= mouse_pos[1] <= 619:  # quit
@@ -85,7 +93,7 @@ def start_screen():
     quit()
 
 
-def player2_mode():
+def game_start(mode):
     global full_order
     global order
     global winner
@@ -95,11 +103,13 @@ def player2_mode():
 
     while not done:
         if order % 2 == 0 and not winner:
-            check_forbidden_point()  # 흑 차례일 때 금수 판별
+            check_forbidden_point(board_stack[order], order % 2 + 1)  # 흑 차례일 때 금수 판별
         else:
             reset_forbidden_point(board_stack[order])
 
         draw_board()  # 격자, 돌, WIN
+        if mode == 2 and order == 1:
+            put_stone(1, 7, 7)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # 닫기 버튼 누르면 게임창 종료
@@ -111,21 +121,26 @@ def player2_mode():
 
                 if not game_end and 40 <= mouse_pos[0] <= 639 and 40 <= mouse_pos[1] <= 639:  # 오목판
                     put_stone(order % 2 + 1, x, y)
-                    winner = is_omok(board_stack[order], x, y)
+                    draw_board()
+                    pygame.display.flip()
+                    if mode:
+                        x, y = AI(board_stack)
+
+                    winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
 
                 elif 700 <= mouse_pos[0] <= 769 and 410 <= mouse_pos[1] <= 479:  # undo
                     undo()
 
                 elif 790 <= mouse_pos[0] <= 859 and 410 <= mouse_pos[1] <= 479:  # redo
                     redo()
-                    winner = is_omok(board_stack[order], x, y)
+                    winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
 
                 elif 700 <= mouse_pos[0] <= 769 and 500 <= mouse_pos[1] <= 569:  # undo all
                     undo_all()
 
                 elif 790 <= mouse_pos[0] <= 859 and 500 <= mouse_pos[1] <= 569:  # redo all
                     redo_all()
-                    winner = is_omok(board_stack[order], x, y)
+                    winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
 
                 elif 700 <= mouse_pos[0] <= 859 and 590 <= mouse_pos[1] <= 659:  # home
                     for i in range(full_order):
@@ -243,7 +258,7 @@ def put_stone(stone_color, x, y):  # 검은돌 착수
     board_stack.append(copy.deepcopy(stone_board))
 
 
-def is_omok(stone_board, x, y):
+def is_omok(stone_board, stone_color, x, y):
     for direction in range(4):  # 4방향 탐색
         stone_cnt = 1
 
@@ -251,7 +266,7 @@ def is_omok(stone_board, x, y):
             cur_x = x + get_move(direction)[0] * side
             cur_y = y + get_move(direction)[1] * side
 
-            while 0 <= cur_x < 15 and 0 <= cur_y < 15 and stone_board[cur_y][cur_x] == stone_board[y][x]:
+            while 0 <= cur_x < 15 and 0 <= cur_y < 15 and stone_board[cur_y][cur_x] == stone_color:
                 stone_cnt += 1
                 cur_x += get_move(direction)[0] * side
                 cur_y += get_move(direction)[1] * side
@@ -262,35 +277,35 @@ def is_omok(stone_board, x, y):
     return False
 
 
-def check_forbidden_point():
+def check_forbidden_point(stone_board, stone_color):
     for i in range(15):
         for j in range(15):
-            if board_stack[order][j][i] == 0 and is_forbidden_point(copy.deepcopy(board_stack[order]), i, j):
-                board_stack[order][j][i] = -1
+            if stone_board[j][i] == 0 and is_forbidden_point(copy.deepcopy(stone_board), stone_color, i, j):
+                stone_board[j][i] = -1
 
 
-def is_forbidden_point(stone_board, x, y):
+def is_forbidden_point(stone_board, stone_color, x, y):
     reset_forbidden_point(stone_board)
 
     # 오목을 위한 금수는 거짓 금수
     for direction in range(4):
-        if is_five(stone_board, x, y, direction):
+        if is_five(stone_board, stone_color, x, y, direction):
             return False
 
     # 33, 44, 6목
-    if is_double_three(stone_board, x, y) or is_double_four(stone_board, x, y) or is_six(stone_board, x, y):
+    if is_double_three(stone_board, stone_color, x, y) or is_double_four(stone_board, stone_color, x, y) or is_six(stone_board, stone_color, x, y):
         return True
 
     return False
 
 
-def is_double_three(stone_board, x, y):
+def is_double_three(stone_board, stone_color, x, y):
     double_three_cnt = 0
 
     stone_board[y][x] = 1
 
     for direction in range(4):
-        if is_open_three(stone_board, x, y, direction):
+        if is_open_three(stone_board, stone_color, x, y, direction):
             double_three_cnt += 1
 
     stone_board[y][x] = 0
@@ -301,16 +316,16 @@ def is_double_three(stone_board, x, y):
     return False
 
 
-def is_double_four(stone_board, x, y):
+def is_double_four(stone_board, stone_color, x, y):
     double_four_cnt = 0
 
     stone_board[y][x] = 1
 
     for direction in range(4):
-        if count_open_four(stone_board, x, y, direction) == 2:
+        if count_open_four(stone_board, stone_color, x, y, direction) == 2:
             double_four_cnt += 2
 
-        elif is_four(stone_board, x, y, direction):
+        elif is_four(stone_board, stone_color, x, y, direction):
             double_four_cnt += 1
 
     stone_board[y][x] = 0
@@ -321,23 +336,23 @@ def is_double_four(stone_board, x, y):
     return False
 
 
-def is_six(stone_board, x, y):
+def is_six(stone_board, stone_color, x, y):
     for direction in range(4):
-        if count_stone(stone_board, x, y, direction) > 5:
+        if count_stone(stone_board, stone_color, x, y, direction) > 5:
             return True
 
     return False
 
 
-def is_open_three(stone_board, x, y, direction):
+def is_open_three(stone_board, stone_color, x, y, direction):
     for side in range(-1, 2, 2):
-        empty_xy = find_empty_point(stone_board, x, y, direction, side)
+        empty_xy = find_empty_point(stone_board, stone_color, x, y, direction, side)
         if empty_xy:
             empty_x, empty_y = empty_xy
             stone_board[empty_y][empty_x] = 1
 
-            if count_open_four(stone_board, empty_x, empty_y, direction) == 1:
-                if not is_forbidden_point(stone_board, empty_x, empty_y):
+            if count_open_four(stone_board, stone_color, empty_x, empty_y, direction) == 1:
+                if not is_forbidden_point(stone_board, stone_color, empty_x, empty_y):
                     stone_board[empty_y][empty_x] = 0
                     return True
 
@@ -346,21 +361,21 @@ def is_open_three(stone_board, x, y, direction):
     return False
 
 
-def count_open_four(stone_board, x, y, direction):
+def count_open_four(stone_board, stone_color, x, y, direction):
     open_four_cnt = 0
 
     for direction_ in range(4):
-        if is_five(stone_board, x, y, direction_):
+        if is_five(stone_board, stone_color, x, y, direction_):
             return open_four_cnt
 
     for side in range(-1, 2, 2):
-        empty_xy = find_empty_point(stone_board, x, y, direction, side)
+        empty_xy = find_empty_point(stone_board, stone_color, x, y, direction, side)
         if empty_xy:
-            if is_five(stone_board, empty_xy[0], empty_xy[1], direction):
+            if is_five(stone_board, stone_color, empty_xy[0], empty_xy[1], direction):
                 open_four_cnt += 1
 
     if open_four_cnt == 2:
-        if count_stone(stone_board, x, y, direction) == 4:
+        if count_stone(stone_board, stone_color, x, y, direction) == 4:
             open_four_cnt = 1
     else:
         open_four_cnt = 0
@@ -368,31 +383,31 @@ def count_open_four(stone_board, x, y, direction):
     return open_four_cnt
 
 
-def is_four(stone_board, x, y, direction):
+def is_four(stone_board, stone_color, x, y, direction):
     for side in range(-1, 2, 2):
-        empty_xy = find_empty_point(stone_board, x, y, direction, side)
+        empty_xy = find_empty_point(stone_board, stone_color, x, y, direction, side)
         if empty_xy:
-            if is_five(stone_board, empty_xy[0], empty_xy[1], direction):
+            if is_five(stone_board, stone_color, empty_xy[0], empty_xy[1], direction):
                 return True
 
     return False
 
 
-def is_five(stone_board, x, y, direction):
-    if count_stone(stone_board, x, y, direction) == 5:
+def is_five(stone_board, stone_color, x, y, direction):
+    if count_stone(stone_board, stone_color, x, y, direction) == 5:
         return True
 
     return False
 
 
-def count_stone(stone_board, x, y, direction):
+def count_stone(stone_board, stone_color, x, y, direction):
     stone_cnt = 1
 
     for side in range(-1, 2, 2):
         cur_x = x + get_move(direction)[0] * side
         cur_y = y + get_move(direction)[1] * side
 
-        while 0 <= cur_x < 15 and 0 <= cur_y < 15 and stone_board[cur_y][cur_x] == 1:
+        while 0 <= cur_x < 15 and 0 <= cur_y < 15 and stone_board[cur_y][cur_x] == stone_color:
             stone_cnt += 1
             cur_x += get_move(direction)[0] * side
             cur_y += get_move(direction)[1] * side
@@ -400,11 +415,11 @@ def count_stone(stone_board, x, y, direction):
     return stone_cnt
 
 
-def find_empty_point(stone_board, x, y, direction, side):
+def find_empty_point(stone_board, stone_color, x, y, direction, side):
     cur_x = x + get_move(direction)[0] * side
     cur_y = y + get_move(direction)[1] * side
 
-    while 0 <= cur_x < 15 and 0 <= cur_y < 15 and stone_board[cur_y][cur_x] == 1:
+    while 0 <= cur_x < 15 and 0 <= cur_y < 15 and stone_board[cur_y][cur_x] == stone_color:
         cur_x += get_move(direction)[0] * side
         cur_y += get_move(direction)[1] * side
 
@@ -459,5 +474,134 @@ def redo_all():
     order = full_order
 
 
+def AI(board_stack):
+    global order
+    global full_order
+    depth = 0
+    coord = dfs(copy.deepcopy(board_stack[order]), depth + 1)
+    tmp = copy.deepcopy(board_stack[order])
+    tmp[coord[1]][coord[0]] = order % 2 + 1
+    board_stack.append(tmp)
+    order += 1
+    full_order = order
+
+    return coord[0], coord[1]
+
+
+def dfs(stone_board, depth):
+    print(depth)
+    if depth > 3:
+        return 0, 0
+
+    weighted_board = [stone_board]
+    weighted_board.append(copy.deepcopy(stone_board))
+    weighted_board.append(copy.deepcopy(stone_board))
+
+    for i in range(1, 3):
+        for j in range(15):
+            for k in range(15):
+                weighted_board[i][k][j] = 0
+
+    if (order + depth) % 2 == 0:
+        for i in range(15):
+            for j in range(15):
+                if weighted_board[0][j][i] == 0 and is_forbidden_point(copy.deepcopy(weighted_board[0]), 1, i, j):
+                    weighted_board[0][j][i] = -1
+    else:
+        for i in range(15):
+            for j in range(15):
+                if weighted_board[0][j][i] == -1:
+                    weighted_board[0][j][i] = 0
+
+    for i in range(15):
+        for j in range(15):
+            for k in range(1, 3):
+                if weighted_board[0][j][i] == 0:
+                    weighted_board[0][j][i] = 2 - (order + depth) % 2
+
+                    for direction in range(4):
+                        if is_five(copy.deepcopy(weighted_board[0]), (weighted_board[0][j][i] != k) + 1, i, j, direction):
+                            print("five", i, j, (weighted_board[0][j][i] != k) + 1)
+                            weighted_board[k][j][i] = 1000
+                            weighted_board[0][j][i] = 0
+                            if depth == 1:
+                                return i, j
+                            else:
+                                return 1000
+
+
+                    open_four_cnt = 0
+                    for direction in range(4):
+                        open_four_cnt += count_open_four(copy.deepcopy(weighted_board[0]), (weighted_board[0][j][i] != k) + 1, i, j, direction)
+
+                    if open_four_cnt > 0:
+                        weighted_board[k][j][i] = 150 * open_four_cnt
+                        print("four", open_four_cnt)
+
+                    open_three_cnt = 0
+                    for direction in range(4):
+                        open_three_cnt += is_open_three(copy.deepcopy(weighted_board[0]), (weighted_board[0][j][i] != k) + 1, i, j, direction)
+
+                    if open_three_cnt > 0:
+                        print("three", open_three_cnt)
+                        weighted_board[k][j][i] = 100 * open_three_cnt
+
+                    if (open_four_cnt > 0 or open_three_cnt > 0) or open_four_cnt >= 2 or open_three_cnt >= 2:
+                        weighted_board[0][j][i] = 0
+                        if depth == 1:
+                            return i, j
+                        else:
+                            return 300
+
+                    two_cnt = 0
+                    for direction in range(4):
+                        if 2 <= count_stone(copy.deepcopy(weighted_board[0]), (weighted_board[0][j][i] != k) + 1, i, j, direction) <= 3:
+                            two_cnt += 1
+
+                    # print("two", two_cnt)
+                    weighted_board[k][j][i] = 10 * two_cnt
+
+                    weighted_board[0][j][i] = 0
+
+            weighted_board[2][j][i] *= 1.1
+
+    max_list = [0, 0, 0]
+    max_xy_list = [0, 0, 0]
+    for k in range(3):
+        max = -1
+        max_x = -1
+        max_y = -1
+        for i in range(15):
+            for j in range(15):
+                if max < weighted_board[1][j][i] + weighted_board[2][j][i]:
+                    max = weighted_board[1][j][i] + weighted_board[2][j][i]
+                    max_x = i
+                    max_y = j
+
+        if depth == 1:
+            max_xy_list[k] = (max_x, max_y)
+
+        if depth < 3:
+            weighted_board[0][max_y][max_x] = 2 - (order + depth) % 2
+            max_list[k] = dfs(copy.deepcopy(weighted_board[0]), depth + 1)
+            weighted_board[0][max_y][max_x] = 0
+            weighted_board[1][max_y][max_x] = weighted_board[2][max_y][max_x] = 0
+        else:
+            return max
+
+    if depth > 1:
+        max_list.sort(reverse=True)
+        return max_list[0]
+
+    else:
+        if max_list[0] >= max_list[1] and max_list[0] >= max_list[2]:
+            return max_xy_list[0]
+        if max_list[1] >= max_list[0] and max_list[1] >= max_list[2]:
+            return max_xy_list[1]
+        if max_list[2] >= max_list[0] and max_list[2] >= max_list[1]:
+            return max_xy_list[2]
+
+
 if __name__ == "__main__":
     start_screen()
+
