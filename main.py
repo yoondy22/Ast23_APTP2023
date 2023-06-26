@@ -117,9 +117,9 @@ def game_start(mode):
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # 마우스 클릭 & 좌클릭
                 mouse_pos = pygame.mouse.get_pos()
-                x, y = (mouse_pos[0] - 40) // 40, (mouse_pos[1] - 40) // 40
 
                 if not game_end and 40 <= mouse_pos[0] <= 639 and 40 <= mouse_pos[1] <= 639:  # 오목판
+                    x, y = (mouse_pos[0] - 40) // 40, (mouse_pos[1] - 40) // 40
                     if mode == 0:
                         put_stone(order % 2 + 1, x, y)
                     else:
@@ -137,14 +137,16 @@ def game_start(mode):
 
                 elif 790 <= mouse_pos[0] <= 859 and 410 <= mouse_pos[1] <= 479:  # redo
                     redo()
-                    winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
+                    if order > 0:
+                        winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
 
                 elif 700 <= mouse_pos[0] <= 769 and 500 <= mouse_pos[1] <= 569:  # undo all
                     undo_all()
 
                 elif 790 <= mouse_pos[0] <= 859 and 500 <= mouse_pos[1] <= 569:  # redo all
                     redo_all()
-                    winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
+                    if order > 0:
+                        winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
 
                 elif 700 <= mouse_pos[0] <= 859 and 590 <= mouse_pos[1] <= 659:  # home
                     for i in range(full_order):
@@ -228,14 +230,17 @@ def draw_board():
     home_text_rect.center = (780, 625)
     screen.blit(home_text, home_text_rect)
 
+    if order % 2 == 0:
+        pygame.draw.circle(screen, BLACK, [730, 50], stone_size, 0)
+    else:
+        pygame.draw.circle(screen, WHITE, [730, 50], stone_size, 0)
+        pygame.draw.circle(screen, BLACK, [730, 50], stone_size, 1)
+
     if winner:
-        font = pygame.font.SysFont("arial", 50, True, False)
-        if winner == 1:
-            winning_text = font.render("BLACK WIN!", True, RED)
-        else:
-            winning_text = font.render("WHITE WIN!", True, RED)
+        font = pygame.font.SysFont("arial", 30, True, False)
+        winning_text = font.render("WIN!", True, RED)
         winning_text_rect = winning_text.get_rect()
-        winning_text_rect.center = (340, 340)
+        winning_text_rect.center = (805, 50)
         screen.blit(winning_text, winning_text_rect)
         game_end = True
 
