@@ -101,6 +101,7 @@ def game_start(mode):
     global winner
     global game_end
 
+    x, y = -1, -1
     done = False
 
     while not done:
@@ -114,6 +115,11 @@ def game_start(mode):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # 닫기 버튼 누르면 게임창 종료
                 done = True
+
+            elif order and event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                mouse_pos = pygame.mouse.get_pos()
+                if 40 <= mouse_pos[0] <= 639 and 40 <= mouse_pos[1] <= 639:
+                    undo()
 
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # 마우스 클릭 & 좌클릭
                 mouse_pos = pygame.mouse.get_pos()
@@ -243,6 +249,8 @@ def draw_board():
         winning_text_rect.center = (805, 50)
         screen.blit(winning_text, winning_text_rect)
         game_end = True
+
+
 
 
 def put_stone(stone_color, x, y):  # 검은돌 착수
