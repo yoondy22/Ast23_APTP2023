@@ -60,8 +60,10 @@ def start_screen():
     player2_text_rect.center = (440, 435)
     screen.blit(player2_text, player2_text_rect)
 
+    quit_font = pygame.font.SysFont("arial", 35, True, False)
+
     pygame.draw.rect(screen, BLACK, [360, 550, 160, 70], 3)  # quit
-    quit_text = menu_font.render("Q U I T", True, BLACK)
+    quit_text = quit_font.render("Q U I T", True, BLACK)
     quit_text_rect = quit_text.get_rect()
     quit_text_rect.center = (440, 585)
     screen.blit(quit_text, quit_text_rect)
@@ -241,11 +243,11 @@ def draw_board():
     redo_all_text_rect.center = (825, 535)
     screen.blit(redo_all_text, redo_all_text_rect)
 
-    quit_font = pygame.font.SysFont("arial", 30, True, False)
+    home_font = pygame.font.SysFont("arial", 30, True, False)
 
     pygame.draw.rect(screen, WHITE, [700, 590, 160, 70], 0)
     pygame.draw.rect(screen, BLACK, [700, 590, 160, 70], 3)
-    home_text = quit_font.render("H O M E", True, BLACK)
+    home_text = home_font.render("H O M E", True, BLACK)
     home_text_rect = home_text.get_rect()
     home_text_rect.center = (780, 625)
     screen.blit(home_text, home_text_rect)
