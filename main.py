@@ -33,7 +33,7 @@ def start_screen():
 
     screen.fill((255, 242, 214))  # Background color
 
-    title_font = pygame.font.SysFont("arial", 50, True, True)  # 제목 폰트
+    title_font = pygame.font.SysFont("arial", 50, True, False)  # 제목 폰트
 
     title_text = title_font.render("GO", True, BLACK)
     title_text_rect = title_text.get_rect()
@@ -217,25 +217,25 @@ def draw_board():
 
     sequence_control_font = pygame.font.SysFont("arial", 15, True, False)
 
-    pygame.draw.rect(screen, (190, 255, 190), [700, 410, 70, 70], 0)
+    pygame.draw.rect(screen, (200, 200, 255), [700, 410, 70, 70], 0)
     undo_text = sequence_control_font.render("Undo", True, BLACK)
     undo_text_rect = undo_text.get_rect()
     undo_text_rect.center = (735, 445)
     screen.blit(undo_text, undo_text_rect)
 
-    pygame.draw.rect(screen, (190, 255, 190), [790, 410, 70, 70], 0)
+    pygame.draw.rect(screen, (200, 200, 255), [790, 410, 70, 70], 0)
     redo_text = sequence_control_font.render("Redo", True, BLACK)
     redo_text_rect = redo_text.get_rect()
     redo_text_rect.center = (825, 445)
     screen.blit(redo_text, redo_text_rect)
 
-    pygame.draw.rect(screen, (190, 255, 190), [700, 500, 70, 70], 0)
+    pygame.draw.rect(screen, (200, 200, 255), [700, 500, 70, 70], 0)
     undo_all_text = sequence_control_font.render("Undo All", True, BLACK)
     undo_all_text_rect = undo_all_text.get_rect()
     undo_all_text_rect.center = (735, 535)
     screen.blit(undo_all_text, undo_all_text_rect)
 
-    pygame.draw.rect(screen, (190, 255, 190), [790, 500, 70, 70], 0)
+    pygame.draw.rect(screen, (200, 200, 255), [790, 500, 70, 70], 0)
     redo_all_text = sequence_control_font.render("Redo All", True, BLACK)
     redo_all_text_rect = redo_all_text.get_rect()
     redo_all_text_rect.center = (825, 535)
@@ -589,7 +589,10 @@ def dfs(stone_board, depth):
                     weighted_board[1][j][i] = 0
 
         if depth == max_depth:
-            return max_xy_list[0]
+            if max_depth == 1:
+                return max_xy_list[0]
+            else:
+                return max
 
         max_list[k] += (-1) * dfs(copy.deepcopy(weighted_board[0]), depth + 1)
 
