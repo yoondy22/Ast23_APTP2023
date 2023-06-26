@@ -1,6 +1,7 @@
 import pygame
 import copy
 
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -11,6 +12,7 @@ grid_size = 40  # 격자 한 칸의 가로세로 픽셀
 stone_size = 17  # 돌의 반지름
 grid_origin_x, grid_origin_y = 60, 60
 max_depth = 3
+max_width = 3
 
 
 board_stack = [[[0 for j in range(15)] for i in range(15)]]  # 오목판 15*15 배열, 0=무돌, 1=흑돌, 2=백돌, -1=금수
@@ -107,13 +109,6 @@ def game_start(mode):
         else:
             reset_forbidden_point(board_stack[order])
 
-        if not game_end and mode == 2 and order == 0:
-            put_stone(1, 7, 7)
-
-        if not game_end and order % 2 == 2 - mode:
-            x, y = AI(board_stack)
-            winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
-
         draw_board()  # 격자, 돌, WIN
 
         for event in pygame.event.get():
@@ -125,9 +120,17 @@ def game_start(mode):
                 x, y = (mouse_pos[0] - 40) // 40, (mouse_pos[1] - 40) // 40
 
                 if not game_end and 40 <= mouse_pos[0] <= 639 and 40 <= mouse_pos[1] <= 639:  # 오목판
-                    put_stone(order % 2 + 1, x, y)
+                    if mode == 0:
+                        put_stone(order % 2 + 1, x, y)
+                    else:
+                        if mode == 2 and order == 0:
+                            put_stone(1, 7, 7)
+                        else:
+                            if order % 2 == mode - 1:
+                                put_stone(order % 2 + 1, x, y)
+                            else:
+                                x, y = AI(board_stack)
                     winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
-                    draw_board()  # 격자, 돌, WIN
 
                 elif 700 <= mouse_pos[0] <= 769 and 410 <= mouse_pos[1] <= 479:  # undo
                     undo()
@@ -326,7 +329,6 @@ def is_double_four(stone_board, stone_color, x, y):
     for direction in range(4):
         if count_open_four(stone_board, stone_color, x, y, direction) == 2:
             double_four_cnt += 2
-
         elif is_four(stone_board, stone_color, x, y, direction):
             double_four_cnt += 1
 
@@ -481,6 +483,7 @@ def redo_all():
 def AI(board_stack):
     global order
     global full_order
+
     depth = 0
     coord = dfs(copy.deepcopy(board_stack[order]), depth + 1)
     stone_board = copy.deepcopy(board_stack[order])
@@ -493,7 +496,6 @@ def AI(board_stack):
 
 
 def dfs(stone_board, depth):
-    global flag
     weighted_board = [stone_board]
     weighted_board.append(copy.deepcopy(stone_board))
 
@@ -502,15 +504,9 @@ def dfs(stone_board, depth):
             weighted_board[1][j][i] = 0
 
     if (order + depth) % 2 == 0:
-        for i in range(15):
-            for j in range(15):
-                if weighted_board[0][j][i] == 0 and is_forbidden_point(copy.deepcopy(weighted_board[0]), 1, i, j):
-                    weighted_board[0][j][i] = -1
+        check_forbidden_point(weighted_board[0], 1)
     else:
-        for i in range(15):
-            for j in range(15):
-                if weighted_board[0][j][i] == -1:
-                    weighted_board[0][j][i] = 0
+        reset_forbidden_point(weighted_board[0])
 
     for i in range(15):
         for j in range(15):
@@ -550,9 +546,9 @@ def dfs(stone_board, depth):
 
                     weighted_board[0][j][i] = 0
 
-    max_list = [-1, -1, -1]
-    max_xy_list = [(-1, -1), (-1, -1), (-1, -1)]
-    for k in range(3):
+    max_list = [-1 for i in range(max_width)]
+    max_xy_list = [(-1, -1) for i in range(max_width)]
+    for k in range(max_width):
         max = -1
         for i in range(15):
             for j in range(15):
@@ -568,15 +564,14 @@ def dfs(stone_board, depth):
         max_list[k] += (-1) * dfs(copy.deepcopy(weighted_board[0]), depth + 1)
 
     if depth == 1:
-        if max_list[0] >= max_list[1] and max_list[0] >= max_list[2]:
-            return max_xy_list[0]
-        if max_list[1] >= max_list[0] and max_list[1] >= max_list[2]:
-            return max_xy_list[1]
-        if max_list[2] >= max_list[0] and max_list[2] >= max_list[1]:
-            return max_xy_list[2]
-
+        max = max_idx = -1
+        for i in range(max_width):
+            if max < max_list[i]:
+                max = max_list[i]
+                max_idx = i
+        return max_xy_list[max_idx]
     else:
-        return (max_list[0] + max_list[1] + max_list[2]) / 3
+        return sum(max_list) / max_width
 
 
 if __name__ == "__main__":
