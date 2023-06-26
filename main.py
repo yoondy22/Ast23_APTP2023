@@ -1,7 +1,6 @@
 import pygame
 import copy
 
-
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -11,6 +10,7 @@ screen_size = [680 + 200, 680]  # 게임창 크기 [w, h]
 grid_size = 40  # 격자 한 칸의 가로세로 픽셀
 stone_size = 17  # 돌의 반지름
 grid_origin_x, grid_origin_y = 60, 60
+max_depth = 3
 
 
 board_stack = [[[0 for j in range(15)] for i in range(15)]]  # 오목판 15*15 배열, 0=무돌, 1=흑돌, 2=백돌, -1=금수
@@ -107,9 +107,14 @@ def game_start(mode):
         else:
             reset_forbidden_point(board_stack[order])
 
-        draw_board()  # 격자, 돌, WIN
-        if mode == 2 and order == 1:
+        if not game_end and mode == 2 and order == 0:
             put_stone(1, 7, 7)
+
+        if not game_end and order % 2 == 2 - mode:
+            x, y = AI(board_stack)
+            winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
+
+        draw_board()  # 격자, 돌, WIN
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # 닫기 버튼 누르면 게임창 종료
@@ -121,12 +126,8 @@ def game_start(mode):
 
                 if not game_end and 40 <= mouse_pos[0] <= 639 and 40 <= mouse_pos[1] <= 639:  # 오목판
                     put_stone(order % 2 + 1, x, y)
-                    draw_board()
-                    pygame.display.flip()
-                    if mode:
-                        x, y = AI(board_stack)
-
                     winner = is_omok(board_stack[order], board_stack[order][y][x], x, y)
+                    draw_board()  # 격자, 돌, WIN
 
                 elif 700 <= mouse_pos[0] <= 769 and 410 <= mouse_pos[1] <= 479:  # undo
                     undo()
@@ -262,7 +263,7 @@ def is_omok(stone_board, stone_color, x, y):
     for direction in range(4):  # 4방향 탐색
         stone_cnt = 1
 
-        for side in range(-1, 2, 2):  # 2방향 탐색
+        for side in [-1, 1]:  # 2방향 탐색
             cur_x = x + get_move(direction)[0] * side
             cur_y = y + get_move(direction)[1] * side
 
@@ -285,7 +286,8 @@ def check_forbidden_point(stone_board, stone_color):
 
 
 def is_forbidden_point(stone_board, stone_color, x, y):
-    reset_forbidden_point(stone_board)
+    if stone_color == 1:
+        reset_forbidden_point(stone_board)
 
     # 오목을 위한 금수는 거짓 금수
     for direction in range(4):
@@ -345,18 +347,20 @@ def is_six(stone_board, stone_color, x, y):
 
 
 def is_open_three(stone_board, stone_color, x, y, direction):
-    for side in range(-1, 2, 2):
+    for side in [-1, 1]:
         empty_xy = find_empty_point(stone_board, stone_color, x, y, direction, side)
         if empty_xy:
-            empty_x, empty_y = empty_xy
-            stone_board[empty_y][empty_x] = 1
+            stone_board[empty_xy[1]][empty_xy[0]] = stone_color
 
-            if count_open_four(stone_board, stone_color, empty_x, empty_y, direction) == 1:
-                if not is_forbidden_point(stone_board, stone_color, empty_x, empty_y):
-                    stone_board[empty_y][empty_x] = 0
+            if count_open_four(stone_board, stone_color, empty_xy[0], empty_xy[1], direction) == 1:
+                if stone_color == 1 and not is_forbidden_point(copy.deepcopy(stone_board), stone_color, empty_xy[0], empty_xy[1]):
+                    stone_board[empty_xy[1]][empty_xy[0]] = 0
+                    return True
+                if stone_color == 2:
+                    stone_board[empty_xy[1]][empty_xy[0]] = 0
                     return True
 
-            stone_board[empty_y][empty_x] = 0
+            stone_board[empty_xy[1]][empty_xy[0]] = 0
 
     return False
 
@@ -368,7 +372,7 @@ def count_open_four(stone_board, stone_color, x, y, direction):
         if is_five(stone_board, stone_color, x, y, direction_):
             return open_four_cnt
 
-    for side in range(-1, 2, 2):
+    for side in [-1, 1]:
         empty_xy = find_empty_point(stone_board, stone_color, x, y, direction, side)
         if empty_xy:
             if is_five(stone_board, stone_color, empty_xy[0], empty_xy[1], direction):
@@ -384,7 +388,7 @@ def count_open_four(stone_board, stone_color, x, y, direction):
 
 
 def is_four(stone_board, stone_color, x, y, direction):
-    for side in range(-1, 2, 2):
+    for side in [-1, 1]:
         empty_xy = find_empty_point(stone_board, stone_color, x, y, direction, side)
         if empty_xy:
             if is_five(stone_board, stone_color, empty_xy[0], empty_xy[1], direction):
@@ -403,7 +407,7 @@ def is_five(stone_board, stone_color, x, y, direction):
 def count_stone(stone_board, stone_color, x, y, direction):
     stone_cnt = 1
 
-    for side in range(-1, 2, 2):
+    for side in [-1, 1]:
         cur_x = x + get_move(direction)[0] * side
         cur_y = y + get_move(direction)[1] * side
 
@@ -479,9 +483,9 @@ def AI(board_stack):
     global full_order
     depth = 0
     coord = dfs(copy.deepcopy(board_stack[order]), depth + 1)
-    tmp = copy.deepcopy(board_stack[order])
-    tmp[coord[1]][coord[0]] = order % 2 + 1
-    board_stack.append(tmp)
+    stone_board = copy.deepcopy(board_stack[order])
+    stone_board[coord[1]][coord[0]] = order % 2 + 1
+    board_stack.append(stone_board)
     order += 1
     full_order = order
 
@@ -489,18 +493,13 @@ def AI(board_stack):
 
 
 def dfs(stone_board, depth):
-    print(depth)
-    if depth > 3:
-        return 0, 0
-
+    global flag
     weighted_board = [stone_board]
     weighted_board.append(copy.deepcopy(stone_board))
-    weighted_board.append(copy.deepcopy(stone_board))
 
-    for i in range(1, 3):
+    for i in range(15):
         for j in range(15):
-            for k in range(15):
-                weighted_board[i][k][j] = 0
+            weighted_board[1][j][i] = 0
 
     if (order + depth) % 2 == 0:
         for i in range(15):
@@ -515,91 +514,69 @@ def dfs(stone_board, depth):
 
     for i in range(15):
         for j in range(15):
-            for k in range(1, 3):
+            for k in [1, 2]:
                 if weighted_board[0][j][i] == 0:
-                    weighted_board[0][j][i] = 2 - (order + depth) % 2
+                    weighted_board[0][j][i] = (order + depth + k) % 2 + 1
 
+                    five_cnt = 0
                     for direction in range(4):
-                        if is_five(copy.deepcopy(weighted_board[0]), (weighted_board[0][j][i] != k) + 1, i, j, direction):
-                            print("five", i, j, (weighted_board[0][j][i] != k) + 1)
-                            weighted_board[k][j][i] = 1000
-                            weighted_board[0][j][i] = 0
-                            if depth == 1:
-                                return i, j
-                            else:
-                                return 1000
-
+                        if is_five(copy.deepcopy(weighted_board[0]), weighted_board[0][j][i], i, j, direction):
+                            five_cnt += 1
+                    weighted_board[1][j][i] += (-k/2 + 2) * 1000 * five_cnt
+                    if five_cnt:
+                        weighted_board[0][j][i] = 0
+                        continue
 
                     open_four_cnt = 0
                     for direction in range(4):
-                        open_four_cnt += count_open_four(copy.deepcopy(weighted_board[0]), (weighted_board[0][j][i] != k) + 1, i, j, direction)
-
-                    if open_four_cnt > 0:
-                        weighted_board[k][j][i] = 150 * open_four_cnt
-                        print("four", open_four_cnt)
+                        open_four_cnt += count_open_four(copy.deepcopy(weighted_board[0]), weighted_board[0][j][i], i, j, direction)
+                    weighted_board[1][j][i] += (-k/2 + 2) * 300 * open_four_cnt * open_four_cnt
 
                     open_three_cnt = 0
                     for direction in range(4):
-                        open_three_cnt += is_open_three(copy.deepcopy(weighted_board[0]), (weighted_board[0][j][i] != k) + 1, i, j, direction)
+                        open_three_cnt += is_open_three(copy.deepcopy(weighted_board[0]), weighted_board[0][j][i], i, j, direction)
+                    weighted_board[1][j][i] += (k/2 + 0.5) * 200 * open_three_cnt * open_three_cnt
 
-                    if open_three_cnt > 0:
-                        print("three", open_three_cnt)
-                        weighted_board[k][j][i] = 100 * open_three_cnt
-
-                    if (open_four_cnt > 0 or open_three_cnt > 0) or open_four_cnt >= 2 or open_three_cnt >= 2:
-                        weighted_board[0][j][i] = 0
-                        if depth == 1:
-                            return i, j
-                        else:
-                            return 300
+                    four_cnt = 0
+                    for direction in range(4):
+                        four_cnt += is_four(copy.deepcopy(weighted_board[0]), weighted_board[0][j][i], i, j, direction)
+                    weighted_board[1][j][i] += 250 * four_cnt
 
                     two_cnt = 0
                     for direction in range(4):
-                        if 2 <= count_stone(copy.deepcopy(weighted_board[0]), (weighted_board[0][j][i] != k) + 1, i, j, direction) <= 3:
+                        if 2 <= count_stone(copy.deepcopy(weighted_board[0]), weighted_board[0][j][i], i, j, direction) <= 3:
                             two_cnt += 1
-
-                    # print("two", two_cnt)
-                    weighted_board[k][j][i] = 10 * two_cnt
+                    weighted_board[1][j][i] += 60 * two_cnt
 
                     weighted_board[0][j][i] = 0
 
-            weighted_board[2][j][i] *= 1.1
-
-    max_list = [0, 0, 0]
-    max_xy_list = [0, 0, 0]
+    max_list = [-1, -1, -1]
+    max_xy_list = [(-1, -1), (-1, -1), (-1, -1)]
     for k in range(3):
         max = -1
-        max_x = -1
-        max_y = -1
         for i in range(15):
             for j in range(15):
-                if max < weighted_board[1][j][i] + weighted_board[2][j][i]:
-                    max = weighted_board[1][j][i] + weighted_board[2][j][i]
-                    max_x = i
-                    max_y = j
+                if max < weighted_board[1][j][i]:
+                    max = weighted_board[1][j][i]
+                    max_list[k] = max
+                    max_xy_list[k] = (i, j)
+                    weighted_board[1][j][i] = 0
 
-        if depth == 1:
-            max_xy_list[k] = (max_x, max_y)
-
-        if depth < 3:
-            weighted_board[0][max_y][max_x] = 2 - (order + depth) % 2
-            max_list[k] = dfs(copy.deepcopy(weighted_board[0]), depth + 1)
-            weighted_board[0][max_y][max_x] = 0
-            weighted_board[1][max_y][max_x] = weighted_board[2][max_y][max_x] = 0
-        else:
+        if depth == max_depth:
             return max
 
-    if depth > 1:
-        max_list.sort(reverse=True)
-        return max_list[0]
+        max_list[k] += (-1) * dfs(copy.deepcopy(weighted_board[0]), depth + 1)
 
-    else:
+    if depth == 1:
         if max_list[0] >= max_list[1] and max_list[0] >= max_list[2]:
             return max_xy_list[0]
         if max_list[1] >= max_list[0] and max_list[1] >= max_list[2]:
             return max_xy_list[1]
         if max_list[2] >= max_list[0] and max_list[2] >= max_list[1]:
             return max_xy_list[2]
+
+    else:
+        return (max_list[0] + max_list[1] + max_list[2]) / 3
 
 
 if __name__ == "__main__":
