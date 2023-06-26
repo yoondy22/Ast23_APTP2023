@@ -11,7 +11,7 @@ screen_size = [680 + 200, 680]  # 게임창 크기 [w, h]
 grid_size = 40  # 격자 한 칸의 가로세로 픽셀
 stone_size = 17  # 돌의 반지름
 grid_origin_x, grid_origin_y = 60, 60
-max_depth = 3
+max_depth = 1
 max_width = 3
 
 
@@ -243,14 +243,17 @@ def draw_board():
         pygame.draw.circle(screen, BLACK, [730, 50], stone_size, 1)
 
     if winner:
+        if winner == 1:
+            pygame.draw.circle(screen, BLACK, [730, 50], stone_size, 0)
+        else:
+            pygame.draw.circle(screen, WHITE, [730, 50], stone_size, 0)
+            pygame.draw.circle(screen, BLACK, [730, 50], stone_size, 1)
         font = pygame.font.SysFont("arial", 30, True, False)
         winning_text = font.render("WIN!", True, RED)
         winning_text_rect = winning_text.get_rect()
         winning_text_rect.center = (805, 50)
         screen.blit(winning_text, winning_text_rect)
         game_end = True
-
-
 
 
 def put_stone(stone_color, x, y):  # 검은돌 착수
@@ -493,15 +496,15 @@ def redo_all():
     order = full_order
 
 
-def AI(board_stack):
+def AI(board_stack_):
     global order
     global full_order
 
     depth = 0
-    coord = dfs(copy.deepcopy(board_stack[order]), depth + 1)
-    stone_board = copy.deepcopy(board_stack[order])
+    coord = dfs(copy.deepcopy(board_stack_[order]), depth + 1)
+    stone_board = copy.deepcopy(board_stack_[order])
     stone_board[coord[1]][coord[0]] = order % 2 + 1
-    board_stack.append(stone_board)
+    board_stack_.append(stone_board)
     order += 1
     full_order = order
 
@@ -572,7 +575,7 @@ def dfs(stone_board, depth):
                     weighted_board[1][j][i] = 0
 
         if depth == max_depth:
-            return max
+            return max_xy_list[0]
 
         max_list[k] += (-1) * dfs(copy.deepcopy(weighted_board[0]), depth + 1)
 
@@ -589,4 +592,3 @@ def dfs(stone_board, depth):
 
 if __name__ == "__main__":
     start_screen()
-
