@@ -190,6 +190,20 @@ def draw_board():
     pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * 11, grid_origin_y + grid_size * 3], dot_size, 0)
     pygame.draw.circle(screen, BLACK, [grid_origin_x + grid_size * 11, grid_origin_y + grid_size * 11], dot_size, 0)
 
+    # 격자 번호
+    coord_num_font = pygame.font.SysFont("arial", 15, False, False)
+
+    for num in range(1, 16):
+        num_text = coord_num_font.render(str(num), True, BLACK)
+        num_text_rect = num_text.get_rect()
+        num_text_rect.center = (40 * num + 20, 30)
+        screen.blit(num_text, num_text_rect)
+    for num in range(1, 16):
+        num_text = coord_num_font.render(str(num), True, BLACK)
+        num_text_rect = num_text.get_rect()
+        num_text_rect.center = (30, 40 * num + 20)
+        screen.blit(num_text, num_text_rect)
+
     # 돌, 금수
     for i in range(15):
         for j in range(15):
@@ -534,7 +548,7 @@ def dfs(stone_board, depth):
                     for direction in range(4):
                         if is_five(copy.deepcopy(weighted_board[0]), weighted_board[0][j][i], i, j, direction):
                             five_cnt += 1
-                    weighted_board[1][j][i] += (-k/2 + 2) * 1000 * five_cnt
+                    weighted_board[1][j][i] += (-k/2 + 2) * 2000 * five_cnt
                     if five_cnt:
                         weighted_board[0][j][i] = 0
                         continue
