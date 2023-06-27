@@ -217,6 +217,18 @@ def draw_board():
             if order % 2 == 0 and board_stack[order][j][i] == -1:
                 pygame.draw.circle(screen, RED, [grid_origin_x + grid_size * i, grid_origin_y + grid_size * j], 6, 0)
 
+    # 로그창
+    pygame.draw.rect(screen, WHITE, [700, 100, 160, 30], 0)
+    pygame.draw.rect(screen, BLACK, [700, 100, 160, 30], 1)
+    pygame.draw.rect(screen, WHITE, [700, 130, 160, 260], 0)
+    pygame.draw.rect(screen, BLACK, [700, 129, 160, 261], 1)
+
+    log_font = pygame.font.SysFont("arial", 18, False, False)
+    log_text = log_font.render("L O G", True, BLACK)
+    log_text_rect = log_text.get_rect()
+    log_text_rect.center = (780, 115)
+    screen.blit(log_text, log_text_rect)
+
     sequence_control_font = pygame.font.SysFont("arial", 15, True, False)
 
     pygame.draw.rect(screen, (200, 200, 255), [700, 410, 70, 70], 0)
